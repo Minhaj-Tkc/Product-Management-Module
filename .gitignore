@@ -1,0 +1,44 @@
+# Ignore the virtual environment directory
+/env/
+
+# Ignore database file
+*.sqlite3
+
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+__pycache__
+
+# Ignore IDE or text editor specific files
+.vscode/
+.idea/
+
+# Ignore Flask config files (you may want to keep these if they contain secrets, or use environment variables)
+config.py
+
+# Ignore log files
+*.log
+
+# Ignore environment variable files
+.env
+
+# Ignore pyenv, pipenv, or poetry files if you're using them for dependency management
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Ignore coverage files (if using coverage.py)
+.coverage
+
+# Ignore mypy type-checking files
+.mypy_cache/
+
+# Ignore test results if any
+nosetests.xml
+coverage.xml
+*.cover
+
+# Ignore the dist and build directories
+dist/
+build/
+*.egg-info

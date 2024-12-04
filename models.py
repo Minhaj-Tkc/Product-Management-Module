@@ -33,6 +33,10 @@ class Product(db.Model):
         self.weight = weight
 
 
+
+
+
+
 # Cart Model
 class Cart(db.Model):
     __tablename__ = 'cart'  # Explicit table name for clarity

@@ -35,41 +35,70 @@ def show_products():
 
 @app.route("/add-to-cart/<int:product_id>", methods=["POST"])
 def add_to_cart(product_id):
-    initialize_cart()
-    product = Product.query.get_or_404(product_id)
-    quantity = int(request.form.get("quantity", 1))
+    initialize_cart()  # Ensure the cart is initialized
+    product = Product.query.get_or_404(product_id)  # Fetch the product or 404 if not found
+    quantity = int(request.form.get("quantity", 1))  # Default quantity to 1 if not provided
 
+    # Check stock availability
     if product.stock < quantity:
-        flash(f"Not enough stock available for {product.name}. Only {product.stock} left.")
+        flash(f"Insufficient stock for {product.name}. Only {product.stock} left!", "error")
         return redirect(url_for("show_products"))
 
-    # Deduct stock and update cart
+    # Get the cart from the session
     cart = session["cart"]
+
+    # Check if product is already in the cart
     for item in cart:
         if item["id"] == product.id:
+            # Update quantity and stock
             item["quantity"] += quantity
             product.stock -= quantity
             db.session.commit()
-            break
-    else:
-        # Add new item to the cart
-        cart.append({
-            "id": product.id,
-            "name": product.name,
-            "price": product.price,
-            "quantity": quantity
-        })
-        product.stock -= quantity
-        db.session.commit()
+            flash(f"Added {quantity} more of {product.name} to your cart!", "success")
+            session["cart"] = cart
+            session.modified = True
+            return redirect(url_for("show_products"))
+
+    # Add a new product to the cart
+    cart.append({
+        "id": product.id,
+        "name": product.name,
+        "price": product.price,
+        "quantity": quantity,
+        "image_url": product.image_url  # Include image URL for later use
+    })
+    product.stock -= quantity
+    db.session.commit()
 
     session["cart"] = cart
     session.modified = True
+    flash(f"{product.name} added to your cart!", "success")
     return redirect(url_for("show_products"))
+
 
 @app.route("/cart")
 def view_cart():
     initialize_cart()
-    return render_template("cart.html", cart=session["cart"])
+    cart = session["cart"]
+    cart_items = []
+
+    for item in cart:
+        product = Product.query.get(item["id"])  # Fetch product details from the database
+        if product:
+            cart_items.append({
+                "id": product.id,
+                "name": product.name,
+                "price": product.price,
+                "quantity": item["quantity"],
+                "image_url": product.image_url,  # Fetch the image URL
+            })
+
+    # Calculate the total price
+    total = sum(item["price"] * item["quantity"] for item in cart_items)
+
+    return render_template("cart.html", cart=cart_items, total=total)
+
+
 
 @app.route("/clear-cart")
 def clear_cart():

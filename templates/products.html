@@ -2,23 +2,31 @@
 
 {% block content %}
 <h1 class="page-title">Available Products</h1>
+
+<!-- Flash Messages -->
+<div id="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flash-messages">
+        {% for category, message in messages %}
+        <li class="flash-message {{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+</div>
+
 <div class="product-grid">
     {% for product in products %}
     <div class="product-card">
-        <!-- Product Image -->
         <div class="product-image">
             <img src="{{ product.image_url }}" alt="{{ product.name }}">
         </div>
         <div class="product-info">
-            <!-- Product Name -->
             <h2 class="product-name">{{ product.name }}</h2>
-            <!-- Product Description -->
             <p class="product-description">{{ product.description }}</p>
-            <!-- Price -->
             <p class="product-price">${{ product.price }}</p>
-            <!-- Stock Quantity -->
             <p class="product-stock">Stock: {{ product.stock }}</p>
-            <!-- Add to Cart Form -->
             <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
                 <div class="quantity-container">
                     <label for="quantity-{{ product.id }}">Quantity:</label>
@@ -30,4 +38,20 @@
     </div>
     {% endfor %}
 </div>
+
+<script>
+    // JavaScript to handle flash message display
+    document.addEventListener("DOMContentLoaded", function () {
+        const flashMessages = document.querySelectorAll(".flash-message");
+        if (flashMessages.length > 0) {
+            flashMessages.forEach(message => {
+                // Show the message for 3 seconds
+                setTimeout(() => {
+                    message.style.display = "none";
+                }, 3000);
+            });
+        }
+    });
+</script>
+
 {% endblock %}

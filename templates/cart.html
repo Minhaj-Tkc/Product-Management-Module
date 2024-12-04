@@ -1,26 +1,53 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<h1>Your Cart</h1>
-<table>
-    <thead>
-        <tr>
-            <th>Product</th>
-            <th>Quantity</th>
-            <th>Price</th>
-            <th>Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in cart_items %}
-        <tr>
-            <td>{{ item.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>${{ item.price }}</td>
-            <td>${{ item.subtotal }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<h2>Total: ${{ total }}</h2>
+<!-- Conditionally display the heading if the cart is not empty -->
+{% if cart %}
+<h1 class="page-title">Your Cart</h1>
+<div class="cart-container">
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart %}
+            <tr class="cart-item">
+                <!-- Product Image -->
+                <td>
+                    <img src="{{ item.image_url }}" alt="{{ item.name }}" class="cart-item-image">
+                </td>
+                <!-- Product Name -->
+                <td>{{ item.name }}</td>
+                <!-- Product Price -->
+                <td>${{ item.price }}</td>
+                <!-- Quantity -->
+                <td>{{ item.quantity }}</td>
+                <!-- Total -->
+                <td>${{ item.price * item.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="cart-total">
+        <strong>Total:</strong> ${{ total }}
+    </p>
+
+    <a href="{{ url_for('clear_cart') }}" class="clear-cart-btn">Clear Cart</a>
+</div>
+{% else %}
+<!-- Empty Cart UI -->
+<div class="empty-cart">
+    <img src="/static/images/empty-cart.png" alt="Empty Cart" class="empty-cart-image">
+    <h2>Your cart is empty</h2>
+    <p>Looks like you haven't added anything to your cart yet!</p>
+    <a href="{{ url_for('show_products') }}" class="btn-primary">Shop Now</a>
+</div>
+{% endif %}
 {% endblock %}

@@ -99,6 +99,31 @@ def view_cart():
     return render_template("cart.html", cart=cart_items, total=total)
 
 
+@app.route("/update-cart/<int:product_id>", methods=["POST"])
+def update_cart(product_id):
+    action = request.form.get("action")
+    cart = session.get("cart", [])
+
+    for item in cart:
+        if item["id"] == product_id:
+            if action == "increase":
+                item["quantity"] += 1
+            elif action == "decrease" and item["quantity"] > 1:
+                item["quantity"] -= 1
+            break
+
+    session["cart"] = cart
+    session.modified = True
+    return redirect(url_for("view_cart"))
+
+
+@app.route("/remove-item/<int:product_id>", methods=["POST"])
+def remove_item(product_id):
+    cart = session.get("cart", [])
+    session["cart"] = [item for item in cart if item["id"] != product_id]
+    session.modified = True
+    return redirect(url_for("view_cart"))
+
 
 @app.route("/clear-cart")
 def clear_cart():
@@ -110,6 +135,12 @@ def clear_cart():
     db.session.commit()
     session.pop("cart", None)
     return redirect(url_for("view_cart"))
+
+@app.route("/proceed-to-payment", methods=["GET"])
+def proceed_to_payment():
+    # Add logic to handle payment
+    return render_template("payment.html")
+
 
 # Main entry point
 if __name__ == "__main__":

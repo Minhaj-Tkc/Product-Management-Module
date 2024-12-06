@@ -13,6 +13,7 @@
                 <th>Price</th>
                 <th>Quantity</th>
                 <th>Total</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -27,9 +28,21 @@
                 <!-- Product Price -->
                 <td>${{ item.price }}</td>
                 <!-- Quantity -->
-                <td>{{ item.quantity }}</td>
+                <td>
+                    <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" class="quantity-form">
+                        <button type="submit" name="action" value="decrease" class="quantity-btn">-</button>
+                        <span>{{ item.quantity }}</span>
+                        <button type="submit" name="action" value="increase" class="quantity-btn">+</button>
+                    </form>
+                </td>
                 <!-- Total -->
                 <td>${{ item.price * item.quantity }}</td>
+                <!-- Remove Item -->
+                <td>
+                    <form action="{{ url_for('remove_item', product_id=item.id) }}" method="POST">
+                        <button type="submit" class="remove-btn">Remove</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -39,7 +52,10 @@
         <strong>Total:</strong> ${{ total }}
     </p>
 
-    <a href="{{ url_for('clear_cart') }}" class="clear-cart-btn">Clear Cart</a>
+    <div class="cart-actions">
+        <a href="{{ url_for('clear_cart') }}" class="clear-cart-btn">Clear Cart</a>
+        <a href="{{ url_for('proceed_to_payment') }}" class="btn-primary">Place Order</a>
+    </div>
 </div>
 {% else %}
 <!-- Empty Cart UI -->

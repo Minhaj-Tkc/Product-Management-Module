@@ -212,3 +212,41 @@
     90% { opacity: 1; }
     100% { opacity: 0; }
 }
+
+
+.quantity-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.quantity-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.remove-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.remove-btn:hover {
+    background-color: #e63939;
+}
+
+.cart-actions .btn-primary {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.cart-actions .btn-primary:hover {
+    background-color: #0056b3;
+}

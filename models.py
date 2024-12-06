@@ -33,27 +33,39 @@ class Product(db.Model):
         self.weight = weight
 
 
-
-
-
-
-# Cart Model
 class Cart(db.Model):
-    __tablename__ = 'cart'  # Explicit table name for clarity
-
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)  # Foreign key to Product table
-    quantity = db.Column(db.Integer, default=1, nullable=False)  # Quantity of the product
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)  # Assuming you have a User model
+    user = db.relationship("User", backref=db.backref("carts", lazy=True))
+    items = db.relationship("CartItem", backref="cart", lazy=True)
 
-    # Relationship to access Product details from Cart
-    product = db.relationship('Product', backref=db.backref('carts', lazy=True))
+class CartItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    product = db.relationship("Product", backref=db.backref("cart_items", lazy=True))
+    cart_id = db.Column(db.Integer, db.ForeignKey("cart.id"), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
 
-    def __repr__(self):
-        return f"<Cart Product ID: {self.product_id}, Quantity: {self.quantity}>"
 
-    def __init__(self, product_id, quantity=1):
-        self.product_id = product_id
-        self.quantity = quantity
+
+
+# # Cart Model
+# class Cart(db.Model):
+#     __tablename__ = 'cart'  # Explicit table name for clarity
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)  # Foreign key to Product table
+#     quantity = db.Column(db.Integer, default=1, nullable=False)  # Quantity of the product
+
+#     # Relationship to access Product details from Cart
+#     product = db.relationship('Product', backref=db.backref('carts', lazy=True))
+
+#     def __repr__(self):
+#         return f"<Cart Product ID: {self.product_id}, Quantity: {self.quantity}>"
+
+#     def __init__(self, product_id, quantity=1):
+#         self.product_id = product_id
+#         self.quantity = quantity
 
 
 # Create database tables if not already created

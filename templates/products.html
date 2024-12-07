@@ -26,11 +26,11 @@
             <h2 class="product-name">{{ product.name }}</h2>
             <p class="product-description">{{ product.description }}</p>
             <p class="product-price">${{ product.price }}</p>
-            <p class="product-stock">Stock: {{ product.stock }}</p>
+            <p class="product-stock">Stock: {{ product.stock_quantity }}</p>
             <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
                 <div class="quantity-container">
                     <label for="quantity-{{ product.id }}">Quantity:</label>
-                    <input type="number" name="quantity" id="quantity-{{ product.id }}" min="1" max="{{ product.stock }}" value="1" required>
+                    <input type="number" name="quantity" id="quantity-{{ product.id }}" min="1" max="{{ product.stock_quantity }}" value="1" required>
                 </div>
                 <button type="submit" class="add-to-cart-btn">Add to Cart</button>
             </form>

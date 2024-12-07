@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from models import db, Category, Product  # Import db from models
 
 # Initialize the app
 app = Flask(__name__)
@@ -7,31 +9,25 @@ app.secret_key = "dev-secret"  # Replace with a secure key in production
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Initialize the database
-db = SQLAlchemy(app)
+# Initialize the database and migration
+# Remove the redundant db initialization here
+migrate = Migrate(app, db)  # Pass the existing db instance
 
-# Database Models
-class Product(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    weight = db.Column(db.Float, nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    stock = db.Column(db.Integer, nullable=False, default=0)
-    image_url = db.Column(db.String(255), nullable=True)  # Add image_url column
-
+# Ensure the db is initialized with the app context
+db.init_app(app)
 
 # Cart helper function
 def initialize_cart():
     if "cart" not in session:
         session["cart"] = []
 
+
 # Routes
 @app.route("/")
 def show_products():
     products = Product.query.all()
     return render_template("products.html", products=products)
+
 
 @app.route("/add-to-cart/<int:product_id>", methods=["POST"])
 def add_to_cart(product_id):
@@ -40,7 +36,7 @@ def add_to_cart(product_id):
     quantity = int(request.form.get("quantity", 1))  # Default quantity to 1 if not provided
 
     # Check stock availability
-    if product.stock < quantity:
+    if product.stock_quantity < quantity:
         flash(f"Insufficient stock for {product.name}. Only {product.stock} left!", "error")
         return redirect(url_for("show_products"))
 
@@ -51,10 +47,13 @@ def add_to_cart(product_id):
     for item in cart:
         if item["id"] == product.id:
             # Update quantity and stock
-            item["quantity"] += quantity
-            product.stock -= quantity
-            db.session.commit()
-            flash(f"Added {quantity} more of {product.name} to your cart!", "success")
+            if item["quantity"] + quantity <= product.stock_quantity:
+                item["quantity"] += quantity
+                product.stock_quantity -= quantity
+                db.session.commit()
+                flash(f"Added {quantity} more of {product.name} to your cart!", "success")
+            else:
+                flash(f"Not enough stock for {product.name}. Only {product.stock_quantity} left!", "error")
             session["cart"] = cart
             session.modified = True
             return redirect(url_for("show_products"))
@@ -67,7 +66,7 @@ def add_to_cart(product_id):
         "quantity": quantity,
         "image_url": product.image_url  # Include image URL for later use
     })
-    product.stock -= quantity
+    product.stock_quantity -= quantity
     db.session.commit()
 
     session["cart"] = cart
@@ -107,7 +106,8 @@ def update_cart(product_id):
     for item in cart:
         if item["id"] == product_id:
             if action == "increase":
-                item["quantity"] += 1
+                if item["quantity"] < Product.query.get(product_id).stock_quantity:
+                    item["quantity"] += 1
             elif action == "decrease" and item["quantity"] > 1:
                 item["quantity"] -= 1
             break
@@ -122,6 +122,14 @@ def remove_item(product_id):
     cart = session.get("cart", [])
     session["cart"] = [item for item in cart if item["id"] != product_id]
     session.modified = True
+    # Restore stock when an item is removed from the cart
+    product = Product.query.get(product_id)
+    if product:
+        for item in cart:
+            if item["id"] == product_id:
+                product.stock_quantity += item["quantity"]
+                db.session.commit()
+                break
     return redirect(url_for("view_cart"))
 
 
@@ -131,10 +139,12 @@ def clear_cart():
     for item in session["cart"]:
         product = Product.query.get(item["id"])
         if product:
-            product.stock += item["quantity"]  # Restore stock
+            product.stock_quantity += item["quantity"]  # Restore stock
     db.session.commit()
     session.pop("cart", None)
+    flash("Your cart has been cleared!", "info")
     return redirect(url_for("view_cart"))
+
 
 @app.route("/proceed-to-payment", methods=["GET"])
 def proceed_to_payment():

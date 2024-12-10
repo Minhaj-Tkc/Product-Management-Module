@@ -1,39 +1,58 @@
 from flask_sqlalchemy import SQLAlchemy
-from flask import Flask
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+from datetime import datetime
 
-# Initialize Flask app and database
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 
+# User Model
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(50), nullable=False, default='Customer')
+    
+    # Common fields
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    profile_updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
 
-class User(db.Model):
-    __tablename__ = 'user'  # Matches the foreign key reference 'user'
+    # Role-specific fields
+    address = db.Column(db.String(300))  # Only for Customers
+    phone = db.Column(db.String(15))  # Common for all
+    pincode = db.Column(db.String(10))  # Only for Customers
 
-    id = db.Column(db.Integer, primary_key=True)  # Primary key
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    # Courier-specific fields
+    vehicle_info = db.Column(db.String(150))  # Vehicle description
+    vehicle_number = db.Column(db.String(50))  # Vehicle license plate
 
-    # String representation for debugging
-    def __repr__(self):
-        return f"<User {self.username}>"
+    # Relationships
+    cart = db.relationship('Cart', backref='user', lazy=True)
+    orders = db.relationship('Order', backref='user', lazy=True)
+
+    # Password utilities
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 # Category Model
 class Category(db.Model):
     __tablename__ = 'category'
     category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     category_Name = db.Column(db.String(50), nullable=False, unique=True)
-    Category_description = db.Column(db.Text, nullable=True)
-    product = db.relationship('Product', backref='category', lazy=True)
+    category_description = db.Column(db.Text, nullable=True)
+    products = db.relationship('Product', backref='category', lazy=True)
 
 # Product Model
 class Product(db.Model):
-    __tablename__ = 'product'  # Explicit table name for clarity
+    __tablename__ = 'product'
 
-    # Define the primary key column
-    id = db.Column(db.Integer, primary_key=True)  # primary_key=True marks this as the primary key
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.String)
@@ -43,25 +62,40 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'), nullable=False)
 
     def __repr__(self):
-        return f"<Product {self.name}>"
+        return f'<Product {self.name}>'
 
-
-
+# Cart Model
 class Cart(db.Model):
+    __tablename__ = 'cart'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)  # Assuming you have a User model
-    user = db.relationship("User", backref=db.backref("carts", lazy=True))
-    items = db.relationship("CartItem", backref="cart", lazy=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    cart_items = db.relationship('CartItem', backref='cart', lazy=True)
 
+# CartItem Model
 class CartItem(db.Model):
+    __tablename__ = 'cart_item'
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
-    product = db.relationship("Product", backref=db.backref("cart_items", lazy=True))
-    cart_id = db.Column(db.Integer, db.ForeignKey("cart.id"), nullable=False)
+    cart_id = db.Column(db.Integer, db.ForeignKey('cart.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    product = db.relationship('Product', backref='cart_items')
+
+# Order Model
+class Order(db.Model):
+    __tablename__ = 'order'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), default='Pending')
+    order_items = db.relationship('OrderItem', backref='order', lazy=True)
+
+# OrderItem Model
+class OrderItem(db.Model):
+    __tablename__ = 'order_item'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-
-
-
-# Create database tables if not already created
-with app.app_context():
-    db.create_all()
+    product = db.relationship('Product', backref='order_items')

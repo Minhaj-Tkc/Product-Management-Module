@@ -54,7 +54,8 @@ class Product(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
-    price = db.Column(db.Float, nullable=False)
+    cost_price = db.Column(db.Float, nullable=False)
+    sell_price = db.Column(db.Float, nullable=False)
     description = db.Column(db.String)
     stock_quantity = db.Column(db.Integer)
     image_url = db.Column(db.String)

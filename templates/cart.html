@@ -1,15 +1,30 @@
-{% extends 'layout.html' %}
+
+{% extends "layout.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
+{% endblock %}
 
 {% block content %}
-<!-- Conditionally display the heading if the cart is not empty -->
-{% if cart %}
-<h1 class="page-title">Your Cart</h1>
+<div class="wraper-cart-container">
 <div class="cart-container">
+    <h1>Your Shopping Cart</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if cart_items %}
     <table class="cart-table">
         <thead>
             <tr>
-                <th>Image</th>
-                <th>Product Name</th>
+                <th>Product</th>
                 <th>Price</th>
                 <th>Quantity</th>
                 <th>Total</th>
@@ -17,30 +32,20 @@
             </tr>
         </thead>
         <tbody>
-            {% for item in cart %}
-            <tr class="cart-item">
-                <!-- Product Image -->
+            {% for item in cart_items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>${{ "%.2f" | format(item.product.sell_price) }}</td>
                 <td>
-                    <img src="{{ item.image_url }}" alt="{{ item.name }}" class="cart-item-image">
-                </td>
-                <!-- Product Name -->
-                <td>{{ item.name }}</td>
-                <!-- Product Price -->
-                <td>${{ item.price }}</td>
-                <!-- Quantity -->
-                <td>
-                    <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" class="quantity-form">
-                        <button type="submit" name="action" value="decrease" class="quantity-btn">-</button>
-                        <span>{{ item.quantity }}</span>
-                        <button type="submit" name="action" value="increase" class="quantity-btn">+</button>
+                    <form method="POST" action="{{ url_for('update_cart', item_id=item.id) }}">
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
+                        <button type="submit" class="btn btn-primary">Update</button>
                     </form>
                 </td>
-                <!-- Total -->
-                <td>${{ item.price * item.quantity }}</td>
-                <!-- Remove Item -->
+                <td>${{ "%.2f" | format(item.quantity * item.product.sell_price) }}</td>
                 <td>
-                    <form action="{{ url_for('remove_item', product_id=item.id) }}" method="POST">
-                        <button type="submit" class="remove-btn">Remove</button>
+                    <form method="POST" action="{{ url_for('remove_from_cart', item_id=item.id) }}">
+                        <button type="submit" class="btn btn-danger">Remove</button>
                     </form>
                 </td>
             </tr>
@@ -48,22 +53,16 @@
         </tbody>
     </table>
 
-    <p class="cart-total">
-        <strong>Total:</strong> ${{ total }}
-    </p>
-
-    <div class="cart-actions">
-        <a href="{{ url_for('clear_cart') }}" class="clear-cart-btn">Clear Cart</a>
-        <a href="{{ url_for('proceed_to_payment') }}" class="btn-primary">Place Order</a>
+    <div class="cart-summary">
+        <h3>Total Price: ${{ "%.2f" | format(total_price) }}</h3>
+        <form action="{{ url_for('checkout') }}" method="POST">
+            <button type="submit" class="btn btn-success">Proceed to Checkout</button>
+        </form>
     </div>
+    {% else %}
+    <p>Your cart is empty. <a href="{{ url_for('products') }}">Continue shopping.</a></p>
+    {% endif %}
 </div>
-{% else %}
-<!-- Empty Cart UI -->
-<div class="empty-cart">
-    <img src="/static/images/empty-cart.png" alt="Empty Cart" class="empty-cart-image">
-    <h2>Your cart is empty</h2>
-    <p>Looks like you haven't added anything to your cart yet!</p>
-    <a href="{{ url_for('show_products') }}" class="btn-primary">Shop Now</a>
 </div>
-{% endif %}
 {% endblock %}
+

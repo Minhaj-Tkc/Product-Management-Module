@@ -1,157 +1,180 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from models import db, Category, Product  # Import db from models
+from models import db, User, Category, Product, Cart, CartItem, Order, OrderItem  # Import db from models
+from flask_login import login_required, current_user, login_user, LoginManager
+from forms import LoginForm
+from datetime import datetime
 
 # Initialize the app
 app = Flask(__name__)
 app.secret_key = "dev-secret"  # Replace with a secure key in production
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///garden_go.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# Initialize the database and migration
-# Remove the redundant db initialization here
-migrate = Migrate(app, db)  # Pass the existing db instance
 
 # Ensure the db is initialized with the app context
 db.init_app(app)
 
-# Cart helper function
-def initialize_cart():
-    if "cart" not in session:
-        session["cart"] = []
+login_manager = LoginManager()
+login_manager.init_app(app)
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@app.before_request
+def update_last_login():
+    if current_user.is_authenticated:
+        current_user.last_login = datetime.utcnow()
+        db.session.commit()
 
 # Routes
-@app.route("/")
-def show_products():
-    products = Product.query.all()
-    return render_template("products.html", products=products)
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            flash('Login successful!', 'success')
 
-
-@app.route("/add-to-cart/<int:product_id>", methods=["POST"])
-def add_to_cart(product_id):
-    initialize_cart()  # Ensure the cart is initialized
-    product = Product.query.get_or_404(product_id)  # Fetch the product or 404 if not found
-    quantity = int(request.form.get("quantity", 1))  # Default quantity to 1 if not provided
-
-    # Check stock availability
-    if product.stock_quantity < quantity:
-        flash(f"Insufficient stock for {product.name}. Only {product.stock} left!", "error")
-        return redirect(url_for("show_products"))
-
-    # Get the cart from the session
-    cart = session["cart"]
-
-    # Check if product is already in the cart
-    for item in cart:
-        if item["id"] == product.id:
-            # Update quantity and stock
-            if item["quantity"] + quantity <= product.stock_quantity:
-                item["quantity"] += quantity
-                product.stock_quantity -= quantity
-                db.session.commit()
-                flash(f"Added {quantity} more of {product.name} to your cart!", "success")
+            # Redirect based on user role
+            if user.role == 'Admin':
+                return redirect(url_for('admin_dashboard'))
+            elif user.role == 'Courier':
+                return redirect(url_for('courier_dashboard'))
             else:
-                flash(f"Not enough stock for {product.name}. Only {product.stock_quantity} left!", "error")
-            session["cart"] = cart
-            session.modified = True
-            return redirect(url_for("show_products"))
+                return redirect(url_for('show_products'))
 
-    # Add a new product to the cart
-    cart.append({
-        "id": product.id,
-        "name": product.name,
-        "price": product.price,
-        "quantity": quantity,
-        "image_url": product.image_url  # Include image URL for later use
-    })
-    product.stock_quantity -= quantity
+        flash('Invalid email or password', 'danger')
+    return render_template('login.html', form=form)
+
+
+# @app.route("/products")
+# def show_products():
+#     products = Product.query.all()
+#     return render_template("products.html", products=products)
+
+@app.route('/products')
+def products():
+    products = Product.query.all()
+    return render_template("products.html", products=products, user=current_user)
+
+
+@app.route('/add_to_cart/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    product = Product.query.get_or_404(product_id)
+
+    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    if not cart:
+        cart = Cart(user_id=current_user.id)
+        db.session.add(cart)
+        db.session.commit()
+
+    cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
+    if cart_item:
+        cart_item.quantity += 1
+    else:
+        cart_item = CartItem(cart_id=cart.id, product_id=product.id, quantity=1)
+        db.session.add(cart_item)
+
     db.session.commit()
-
-    session["cart"] = cart
-    session.modified = True
-    flash(f"{product.name} added to your cart!", "success")
-    return redirect(url_for("show_products"))
+    flash(f'{product.name} added to cart!', 'success')
+    return redirect(url_for('products'))
 
 
-@app.route("/cart")
+@app.route('/cart')
+@login_required
 def view_cart():
-    initialize_cart()
-    cart = session["cart"]
-    cart_items = []
+    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    if not cart or not cart.cart_items:
+        flash('Your cart is empty.', 'info')
+        return redirect(url_for('products'))
 
-    for item in cart:
-        product = Product.query.get(item["id"])  # Fetch product details from the database
-        if product:
-            cart_items.append({
-                "id": product.id,
-                "name": product.name,
-                "price": product.price,
-                "quantity": item["quantity"],
-                "image_url": product.image_url,  # Fetch the image URL
-            })
-
-    # Calculate the total price
-    total = sum(item["price"] * item["quantity"] for item in cart_items)
-
-    return render_template("cart.html", cart=cart_items, total=total)
+    cart_items = CartItem.query.filter_by(cart_id=cart.id).all()
+    total_price = sum(item.quantity * item.product.price for item in cart_items)
+    return render_template('cart.html', cart_items=cart_items, total_price=total_price)
 
 
-@app.route("/update-cart/<int:product_id>", methods=["POST"])
-def update_cart(product_id):
-    action = request.form.get("action")
-    cart = session.get("cart", [])
+@app.route('/update_cart/<int:item_id>', methods=['POST'])
+@login_required
+def update_cart(item_id):
+    cart_item = CartItem.query.get_or_404(item_id)
+    if cart_item.cart.user_id != current_user.id:
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('view_cart'))
 
-    for item in cart:
-        if item["id"] == product_id:
-            if action == "increase":
-                if item["quantity"] < Product.query.get(product_id).stock_quantity:
-                    item["quantity"] += 1
-            elif action == "decrease" and item["quantity"] > 1:
-                item["quantity"] -= 1
-            break
+    new_quantity = int(request.form.get('quantity', 1))
+    if new_quantity < 1:
+        db.session.delete(cart_item)
+        flash('Item removed from cart.', 'info')
+    else:
+        cart_item.quantity = new_quantity
+        flash('Cart updated.', 'success')
 
-    session["cart"] = cart
-    session.modified = True
-    return redirect(url_for("view_cart"))
-
-
-@app.route("/remove-item/<int:product_id>", methods=["POST"])
-def remove_item(product_id):
-    cart = session.get("cart", [])
-    session["cart"] = [item for item in cart if item["id"] != product_id]
-    session.modified = True
-    # Restore stock when an item is removed from the cart
-    product = Product.query.get(product_id)
-    if product:
-        for item in cart:
-            if item["id"] == product_id:
-                product.stock_quantity += item["quantity"]
-                db.session.commit()
-                break
-    return redirect(url_for("view_cart"))
-
-
-@app.route("/clear-cart")
-def clear_cart():
-    initialize_cart()
-    for item in session["cart"]:
-        product = Product.query.get(item["id"])
-        if product:
-            product.stock_quantity += item["quantity"]  # Restore stock
     db.session.commit()
-    session.pop("cart", None)
-    flash("Your cart has been cleared!", "info")
-    return redirect(url_for("view_cart"))
+    return redirect(url_for('view_cart'))
 
 
-@app.route("/proceed-to-payment", methods=["GET"])
-def proceed_to_payment():
-    # Add logic to handle payment
-    return render_template("payment.html")
+@app.route('/remove_from_cart/<int:item_id>', methods=['POST'])
+@login_required
+def remove_from_cart(item_id):
+    cart_item = CartItem.query.get_or_404(item_id)
+    if cart_item.cart.user_id != current_user.id:
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('view_cart'))
+
+    db.session.delete(cart_item)
+    db.session.commit()
+    flash('Item removed from cart.', 'info')
+    return redirect(url_for('view_cart'))
+
+
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    if not cart or not cart.cart_items:
+        flash('Your cart is empty. Add some products before checking out.', 'info')
+        return redirect(url_for('products'))
+
+    # Create the order
+    total_price = sum(item.quantity * item.product.price for item in cart.cart_items)
+    order = Order(user_id=current_user.id, total_price=total_price, status='Pending')
+    db.session.add(order)
+    db.session.commit()
+
+    # Add items to the order
+    for cart_item in cart.cart_items:
+        order_item = OrderItem(
+            order_id=order.id,
+            product_id=cart_item.product_id,
+            quantity=cart_item.quantity
+        )
+        db.session.add(order_item)
+        db.session.delete(cart_item)  # Remove the item from the cart
+
+    # Empty the cart after checkout
+    db.session.commit()
+
+    flash('Your order has been placed successfully!', 'success')
+    return redirect(url_for('order_summary', order_id=order.id))
+
+
+@app.route('/order/<int:order_id>')
+@login_required
+def order_summary(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != current_user.id:
+        flash('Unauthorized access to this order.', 'danger')
+        return redirect(url_for('products'))
+
+    return render_template('order_summary.html', order=order)
 
 
 # Main entry point
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

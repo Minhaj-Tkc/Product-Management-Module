@@ -50,13 +50,8 @@ def login():
     return render_template('login.html', form=form)
 
 
-# @app.route("/products")
-# def show_products():
-#     products = Product.query.all()
-#     return render_template("products.html", products=products)
-
-@app.route('/products')
-def products():
+@app.route('/show_products')
+def show_products():
     products = Product.query.all()
     return render_template("products.html", products=products, user=current_user)
 
@@ -81,7 +76,7 @@ def add_to_cart(product_id):
 
     db.session.commit()
     flash(f'{product.name} added to cart!', 'success')
-    return redirect(url_for('products'))
+    return redirect(url_for('show_products'))
 
 
 @app.route('/cart')
@@ -90,10 +85,10 @@ def view_cart():
     cart = Cart.query.filter_by(user_id=current_user.id).first()
     if not cart or not cart.cart_items:
         flash('Your cart is empty.', 'info')
-        return redirect(url_for('products'))
+        return redirect(url_for('show_products'))
 
     cart_items = CartItem.query.filter_by(cart_id=cart.id).all()
-    total_price = sum(item.quantity * item.product.price for item in cart_items)
+    total_price = sum(item.quantity * item.product.sell_price for item in cart_items)
     return render_template('cart.html', cart_items=cart_items, total_price=total_price)
 
 
@@ -137,10 +132,10 @@ def checkout():
     cart = Cart.query.filter_by(user_id=current_user.id).first()
     if not cart or not cart.cart_items:
         flash('Your cart is empty. Add some products before checking out.', 'info')
-        return redirect(url_for('products'))
+        return redirect(url_for('show_products'))
 
     # Create the order
-    total_price = sum(item.quantity * item.product.price for item in cart.cart_items)
+    total_price = sum(item.quantity * item.product.sell_price for item in cart.cart_items)
     order = Order(user_id=current_user.id, total_price=total_price, status='Pending')
     db.session.add(order)
     db.session.commit()

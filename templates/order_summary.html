@@ -28,15 +28,15 @@
             {% for item in order.order_items %}
             <tr>
                 <td>{{ item.product.name }}</td>
-                <td>${{ "%.2f" | format(item.product.price) }}</td>
+                <td>${{ "%.2f" | format(item.product.sell_price) }}</td>
                 <td>{{ item.quantity }}</td>
-                <td>${{ "%.2f" | format(item.quantity * item.product.price) }}</td>
+                <td>${{ "%.2f" | format(item.quantity * item.product.sell_price) }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <a href="{{ url_for('products') }}" class="btn btn-primary">Continue Shopping</a>
+    <a href="{{ url_for('show_products') }}" class="btn">Continue Shopping</a>
 </div>
 </div>
 {% endblock %}

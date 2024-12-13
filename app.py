@@ -61,17 +61,17 @@ def show_products():
 def add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
 
-    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    cart = Cart.query.filter_by(user_id=current_user.user_id).first()
     if not cart:
-        cart = Cart(user_id=current_user.id)
+        cart = Cart(user_id=current_user.user_id)
         db.session.add(cart)
         db.session.commit()
 
-    cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
+    cart_item = CartItem.query.filter_by(cart_id=cart.cart_id, product_id=product.product_id).first()
     if cart_item:
         cart_item.quantity += 1
     else:
-        cart_item = CartItem(cart_id=cart.id, product_id=product.id, quantity=1)
+        cart_item = CartItem(cart_id=cart.cart_id, product_id=product.product_id, quantity=1)
         db.session.add(cart_item)
 
     db.session.commit()
@@ -82,13 +82,13 @@ def add_to_cart(product_id):
 @app.route('/cart')
 @login_required
 def view_cart():
-    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    cart = Cart.query.filter_by(user_id=current_user.user_id).first()
     if not cart or not cart.cart_items:
         flash('Your cart is empty.', 'info')
         return redirect(url_for('show_products'))
 
-    cart_items = CartItem.query.filter_by(cart_id=cart.id).all()
-    total_price = sum(item.quantity * item.product.sell_price for item in cart_items)
+    cart_items = CartItem.query.filter_by(cart_id=cart.cart_id).all()
+    total_price = sum(item.quantity * item.product.selling_price for item in cart_items)
     return render_template('cart.html', cart_items=cart_items, total_price=total_price)
 
 
@@ -96,7 +96,7 @@ def view_cart():
 @login_required
 def update_cart(item_id):
     cart_item = CartItem.query.get_or_404(item_id)
-    if cart_item.cart.user_id != current_user.id:
+    if cart_item.cart.user_id != current_user.user_id:
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('view_cart'))
 
@@ -116,7 +116,7 @@ def update_cart(item_id):
 @login_required
 def remove_from_cart(item_id):
     cart_item = CartItem.query.get_or_404(item_id)
-    if cart_item.cart.user_id != current_user.id:
+    if cart_item.cart.user_id != current_user.user_id:
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('view_cart'))
 
@@ -129,21 +129,21 @@ def remove_from_cart(item_id):
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
-    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    cart = Cart.query.filter_by(user_id=current_user.user_id).first()
     if not cart or not cart.cart_items:
         flash('Your cart is empty. Add some products before checking out.', 'info')
         return redirect(url_for('show_products'))
 
     # Create the order
-    total_price = sum(item.quantity * item.product.sell_price for item in cart.cart_items)
-    order = Order(user_id=current_user.id, total_price=total_price, status='Pending')
+    total_price = sum(item.quantity * item.product.selling_price for item in cart.cart_items)
+    order = Order(user_id=current_user.user_id, total_price=total_price, status='Pending', assigned_to="3", address=current_user.address, pincode=current_user.pincode, shipping_cost=10)
     db.session.add(order)
     db.session.commit()
 
     # Add items to the order
     for cart_item in cart.cart_items:
         order_item = OrderItem(
-            order_id=order.id,
+            order_id=order.order_id,
             product_id=cart_item.product_id,
             quantity=cart_item.quantity
         )
@@ -154,14 +154,14 @@ def checkout():
     db.session.commit()
 
     flash('Your order has been placed successfully!', 'success')
-    return redirect(url_for('order_summary', order_id=order.id))
+    return redirect(url_for('order_summary', order_id=order.order_id))
 
 
 @app.route('/order/<int:order_id>')
 @login_required
 def order_summary(order_id):
     order = Order.query.get_or_404(order_id)
-    if order.user_id != current_user.id:
+    if order.user_id != current_user.user_id:
         flash('Unauthorized access to this order.', 'danger')
         return redirect(url_for('products'))
 

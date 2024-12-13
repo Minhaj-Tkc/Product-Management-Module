@@ -31,23 +31,23 @@
         <div class="product-info">
             <h2 class="product-name">{{ product.name }}</h2>
             <p class="product-description">{{ product.description }}</p>
-            <p class="product-price">${{ product.sell_price }}</p>
+            <p class="product-price">₹{{ product.selling_price }}</p>
             <p class="product-stock">Stock: {{ product.stock_quantity }}</p>
 
             <!-- Display "Add to Cart" form for everyone -->
-            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="add-to-cart-form-{{ product.id }}">
+            <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}" method="POST" id="add-to-cart-form-{{ product.product_id }}">
                 <div class="quantity-container">
-                    <label for="quantity-{{ product.id }}">Quantity:</label>
-                    <input type="number" name="quantity" id="quantity-{{ product.id }}" min="1" max="{{ product.stock_quantity }}" value="1" required>
+                    <label for="quantity-{{ product.product_id }}">Quantity:</label>
+                    <input type="number" name="quantity" id="quantity-{{ product.product_id }}" min="1" max="{{ product.stock_quantity }}" value="1" required>
                 </div>
-                <button type="submit" class="add-to-cart-btn" id="add-to-cart-btn-{{ product.id }}">Add to Cart</button>
+                <button type="submit" class="add-to-cart-btn" id="add-to-cart-btn-{{ product.product_id }}">Add to Cart</button>
             </form>
 
             <!-- If the user is an admin, show an alert when they click "Add to Cart" -->
             {% if user.is_authenticated and user.role == 'Admin' %}
             <script>
                 document.addEventListener("DOMContentLoaded", function () {
-                    const form = document.getElementById('add-to-cart-form-{{ product.id }}');
+                    const form = document.getElementById('add-to-cart-form-{{ product.product_id }}');
                     const submitButton = form.querySelector('button[type="submit"]');
                     submitButton.addEventListener("click", function(event) {
                         alert("Admins cannot add products to the cart.");

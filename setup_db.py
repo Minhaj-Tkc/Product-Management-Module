@@ -65,7 +65,7 @@ def setup_db():
                 category_id=flowers.category_id,
                 stock_quantity=60,
                 product_weight=0.4,
-                image_url="https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.gardendesign.com%2Fflowers%2Fmarigold.html&psig=AOvVaw1Lnq-ehqiWtVSbfM9myecp&ust=1734197490937000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMCJoZ6jpYoDFQAAAAAdAAAAABAY"
+                image_url="https://www.almanac.com/sites/default/files/users/AlmanacStaffArchive/marigold-field_full_width.jpg"
             ),
             Product(
                 name="Spinach Plant",

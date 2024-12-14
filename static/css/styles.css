@@ -10,8 +10,8 @@
 
 body {
     font-family: Arial, sans-serif;
-    background: #f0f2f5;
-    color: #2d3436;
+    background: #f9f9f9;
+    color: #333;
 }
 
 .navbar {
@@ -21,7 +21,3 @@ body {
 /* footer {
     height: 60px;
 } */
-
-
-
-

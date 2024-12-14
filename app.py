@@ -50,10 +50,123 @@ def login():
     return render_template('login.html', form=form)
 
 
-@app.route('/show_products')
+# @app.route('/show_products')
+# def show_products():
+#     products = Product.query.all()
+#     return render_template("products.html", products=products, user=current_user)
+
+
+# @app.route('/show_products', methods=['GET'])
+# def show_products():
+#     category = request.args.get('category')  # Get category from query params
+#     search_query = request.args.get('search')  # Get search query
+#     sort_by = request.args.get('sort_by', 'name')  # Default sort by name
+
+#     products_query = Product.query  # Assuming SQLAlchemy
+
+#     # Apply filtering based on category
+#     if category:
+#         products_query = products_query.filter_by(category=category)
+
+#     # Apply search functionality
+#     if search_query:
+#         products_query = products_query.filter(
+#             Product.name.ilike(f"%{search_query}%") |
+#             Product.description.ilike(f"%{search_query}%")
+#         )
+
+#     # Apply sorting
+#     if sort_by == 'price':
+#         products_query = products_query.order_by(Product.selling_price)
+#     elif sort_by == 'weight':
+#         products_query = products_query.order_by(Product.product_weight)
+#     else:
+#         products_query = products_query.order_by(Product.name)
+
+#     products = products_query.all()
+#     categories = Product.query.with_entities(Product.category).distinct()
+
+#     return render_template('products.html', products=products, categories=categories, user=current_user)
+
+
+# @app.route('/show_products', methods=['GET'])
+# def show_products():
+#     category_name = request.args.get('category')  # Get category name from query params
+#     search_query = request.args.get('search')  # Get search query
+#     sort_by = request.args.get('sort_by', 'name')  # Default sort by name
+
+#     products_query = Product.query  # Assuming SQLAlchemy
+
+#     # Apply filtering based on category
+#     if category_name:
+#         products_query = products_query.join(Category).filter(Category.category_name == category_name)
+
+#     # Apply search functionality
+#     if search_query:
+#         products_query = products_query.filter(
+#             Product.name.ilike(f"%{search_query}%") |
+#             Product.description.ilike(f"%{search_query}%")
+#         )
+
+#     # Apply sorting
+#     if sort_by == 'price':
+#         products_query = products_query.order_by(Product.selling_price)
+#     elif sort_by == 'weight':
+#         products_query = products_query.order_by(Product.product_weight)
+#     else:
+#         products_query = products_query.order_by(Product.name)
+
+#     # Fetch filtered, sorted products
+#     products = products_query.all()
+
+#     # Fetch distinct categories
+#     categories = Category.query.with_entities(Category.category_name).distinct()
+
+#     return render_template('products.html', products=products, categories=categories, user=current_user)
+
+
+# from flask import jsonify, render_template, request
+
+@app.route('/show_products', methods=['GET'])
 def show_products():
-    products = Product.query.all()
-    return render_template("products.html", products=products, user=current_user)
+    category_name = request.args.get('category')
+    search_query = request.args.get('search')
+    sort_by = request.args.get('sort_by', 'name')
+
+    products_query = Product.query
+
+    if category_name:
+        products_query = products_query.join(Category).filter(Category.category_name == category_name)
+
+    if search_query:
+        products_query = products_query.filter(
+            Product.name.ilike(f"%{search_query}%") |
+            Product.description.ilike(f"%{search_query}%")
+        )
+
+    if sort_by == 'price':
+        products_query = products_query.order_by(Product.selling_price)
+    elif sort_by == 'weight':
+        products_query = products_query.order_by(Product.product_weight)
+    else:
+        products_query = products_query.order_by(Product.name)
+
+    products = products_query.all()
+    categories = Category.query.with_entities(Category.category_name).distinct()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # Check for AJAX
+        return render_template('partials/product_grid.html', products=products)
+
+    return render_template('products.html', products=products, categories=categories, user=current_user)
+
+
+@app.route('/product/<int:product_id>', methods=['GET'])
+def product_details(product_id):
+    product = Product.query.get_or_404(product_id)  # Fetch product by ID or return 404
+    return render_template('product_details.html', product=product, user=current_user)
+
+
+
 
 
 @app.route('/add_to_cart/<int:product_id>', methods=['POST'])

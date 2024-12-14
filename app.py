@@ -168,28 +168,33 @@ def product_details(product_id):
 
 
 
-
 @app.route('/add_to_cart/<int:product_id>', methods=['POST'])
 @login_required
 def add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
 
+    # Get the quantity from the form
+    quantity = int(request.form['quantity'])
+
+    # Get or create the cart
     cart = Cart.query.filter_by(user_id=current_user.user_id).first()
     if not cart:
         cart = Cart(user_id=current_user.user_id)
         db.session.add(cart)
         db.session.commit()
 
+    # Check if the product is already in the cart
     cart_item = CartItem.query.filter_by(cart_id=cart.cart_id, product_id=product.product_id).first()
     if cart_item:
-        cart_item.quantity += 1
+        cart_item.quantity += quantity  # Update the quantity by the user-selected amount
     else:
-        cart_item = CartItem(cart_id=cart.cart_id, product_id=product.product_id, quantity=1)
+        cart_item = CartItem(cart_id=cart.cart_id, product_id=product.product_id, quantity=quantity)
         db.session.add(cart_item)
 
     db.session.commit()
-    flash(f'{product.name} added to cart!', 'success')
+    flash(f'{quantity} x {product.name} added to cart!', 'success')
     return redirect(url_for('show_products'))
+
 
 
 @app.route('/cart')
@@ -239,6 +244,37 @@ def remove_from_cart(item_id):
     return redirect(url_for('view_cart'))
 
 
+# @app.route('/checkout', methods=['GET', 'POST'])
+# @login_required
+# def checkout():
+#     cart = Cart.query.filter_by(user_id=current_user.user_id).first()
+#     if not cart or not cart.cart_items:
+#         flash('Your cart is empty. Add some products before checking out.', 'info')
+#         return redirect(url_for('show_products'))
+
+#     # Create the order
+#     total_price = sum(item.quantity * item.product.selling_price for item in cart.cart_items)
+#     order = Order(user_id=current_user.user_id, total_price=total_price, status='Pending', assigned_to="3", address=current_user.address, pincode=current_user.pincode, shipping_cost=10)
+#     db.session.add(order)
+#     db.session.commit()
+
+#     # Add items to the order
+#     for cart_item in cart.cart_items:
+#         order_item = OrderItem(
+#             order_id=order.order_id,
+#             product_id=cart_item.product_id,
+#             quantity=cart_item.quantity
+#         )
+#         db.session.add(order_item)
+#         db.session.delete(cart_item)  # Remove the item from the cart
+
+#     # Empty the cart after checkout
+#     db.session.commit()
+
+#     flash('Your order has been placed successfully!', 'success')
+#     return redirect(url_for('order_summary', order_id=order.order_id))
+
+
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
@@ -247,14 +283,34 @@ def checkout():
         flash('Your cart is empty. Add some products before checking out.', 'info')
         return redirect(url_for('show_products'))
 
+    # Check for product availability in stock
+    for cart_item in cart.cart_items:
+        product = cart_item.product
+        if cart_item.quantity > product.stock_quantity:
+            flash(f'Not enough stock for {product.name}. Available stock: {product.stock_quantity}.', 'danger')
+            return redirect(url_for('view_cart'))  # Redirect to cart if stock is insufficient
+
     # Create the order
     total_price = sum(item.quantity * item.product.selling_price for item in cart.cart_items)
-    order = Order(user_id=current_user.user_id, total_price=total_price, status='Pending', assigned_to="3", address=current_user.address, pincode=current_user.pincode, shipping_cost=10)
+    order = Order(
+        user_id=current_user.user_id,
+        total_price=total_price,
+        status='Pending',
+        assigned_to="3",  # You can set this based on your logic
+        address=current_user.address,
+        pincode=current_user.pincode,
+        shipping_cost=10
+    )
     db.session.add(order)
     db.session.commit()
 
-    # Add items to the order
+    # Add items to the order and update stock
     for cart_item in cart.cart_items:
+        # Update product stock
+        product = cart_item.product
+        product.stock_quantity -= cart_item.quantity  # Decrease the stock
+
+        # Add order items
         order_item = OrderItem(
             order_id=order.order_id,
             product_id=cart_item.product_id,

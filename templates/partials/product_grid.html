@@ -13,7 +13,7 @@
             <p class="product-price">₹{{ product.selling_price }}</p>
             <p class="product-weight">Weight: {{ product.product_weight }} kg</p>
             
-
+            {% if product.stock_quantity > 0 %}
             <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}" method="POST" id="add-to-cart-form-{{ product.product_id }}">
                 <div class="quantity-container">
                     <label for="quantity-{{ product.product_id }}">Quantity:</label>
@@ -21,6 +21,11 @@
                 </div>
                 <button type="submit" class="add-to-cart-btn">Add to Cart</button>
             </form>
+            {% else %}
+                <p class="product-stock-out-of-stock">Out of Stock</p>
+                <button type="button" class="add-to-cart-btn" disabled>Add to Cart</button>
+            {% endif %}
+
         </div>
     </div>
     {% endfor %}

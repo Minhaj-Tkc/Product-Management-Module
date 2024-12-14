@@ -2,26 +2,38 @@
 
 {% block title %}{{ product.name }} - Details{% endblock %}
 
-{% block content %}
-<div class="row">
-    <div class="col-md-6">
-        <img src="{{ url_for('static', filename='images/' ~ product.image_url) }}" class="img-fluid" alt="{{ product.name }}">
-    </div>
-    <div class="col-md-6">
-        <h1>{{ product.name }}</h1>
-        <p>{{ product.description }}</p>
-        <p><strong>Price:</strong> ₹{{ product.selling_price }}</p>
-        <p><strong>Weight:</strong> {{ product.product_weight }} kg</p>
-        <p><strong>Available Stock:</strong> {{ product.stock_quantity }}</p>
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/product_details.css') }}">
+{% endblock %}
 
-        <!-- Add to Cart Form -->
-        <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}" method="POST">
-            <div class="mb-3">
-                <label for="quantity" class="form-label">Quantity:</label>
-                <input type="number" name="quantity" id="quantity" class="form-control" min="1" max="{{ product.stock_quantity }}" value="1" required>
-            </div>
-            <button type="submit" class="btn btn-success">Add to Cart</button>
-        </form>
+{% block content %}
+<div class="full-page-container">
+    <div class="back-button-container">
+        <a href="{{ url_for('show_products') }}" class="btn btn-secondary back-button">&#8592; Back to Products</a>
+    </div>
+    <div class="product-details-container">
+        <div class="product-image">
+            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+        </div>
+        <div class="product-info">
+            <h1 class="product-title">{{ product.name }}</h1>
+            <p class="product-description">{{ product.description }}</p>
+            <p class="product-price">₹{{ product.selling_price }}</p>
+            <p class="product-weight"><strong>Weight:</strong> {{ product.product_weight }} kg</p>
+            <p class="product-stock {{ 'out-of-stock' if product.stock_quantity == 0 else '' }}">
+                {{ 'Out of Stock' if product.stock_quantity == 0 else 'Available Stock: ' + product.stock_quantity|string }}
+            </p>
+
+            {% if product.stock_quantity > 0 %}
+            <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}" method="POST" class="add-to-cart-form">
+                <div class="quantity-container">
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" name="quantity" id="quantity" min="1" max="{{ product.stock_quantity }}" value="1" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add to Cart</button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

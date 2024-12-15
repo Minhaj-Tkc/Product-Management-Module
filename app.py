@@ -187,13 +187,19 @@ def add_to_cart(product_id):
     cart_item = CartItem.query.filter_by(cart_id=cart.cart_id, product_id=product.product_id).first()
     if cart_item:
         cart_item.quantity += quantity  # Update the quantity by the user-selected amount
+        toast_message = f'Added {quantity} more {product.name} to your cart!'
     else:
         cart_item = CartItem(cart_id=cart.cart_id, product_id=product.product_id, quantity=quantity)
         db.session.add(cart_item)
+        toast_message = f'{product.name} added to your cart!'
 
     db.session.commit()
-    flash(f'{quantity} x {product.name} added to cart!', 'success')
+
+    # Use the toaster-specific flash
+    flash(toast_message, 'success')  # Success indicates the type for the toaster
     return redirect(url_for('show_products'))
+
+
 
 
 

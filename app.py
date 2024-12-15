@@ -5,6 +5,7 @@ from models import db, User, Category, Product, Cart, CartItem, Order, OrderItem
 from flask_login import login_required, current_user, login_user, LoginManager
 from forms import LoginForm
 from datetime import datetime
+import requests
 
 # Initialize the app
 app = Flask(__name__)
@@ -203,6 +204,64 @@ def add_to_cart(product_id):
 
 
 
+# @app.route('/cart')
+# @login_required
+# def view_cart():
+#     cart = Cart.query.filter_by(user_id=current_user.user_id).first()
+#     if not cart or not cart.cart_items:
+#         flash('Your cart is empty.', 'info')
+#         return redirect(url_for('show_products'))
+
+#     cart_items = CartItem.query.filter_by(cart_id=cart.cart_id).all()
+#     total_price = sum(item.quantity * item.product.selling_price for item in cart_items)
+#     return render_template('cart.html', cart_items=cart_items, total_price=total_price)
+
+
+
+def calculate_shipping_cost(pincode, product_weight, country):
+    fixed_rate_for_outside_india = 500  # Fixed rate for countries outside India
+    base_shipping_cost = 50  # Base cost for nearby locations
+    weight_rate = 10  # Additional cost per kg of weight
+
+    # If the country is not India, return the fixed rate
+    if country.lower() != 'india':
+        return fixed_rate_for_outside_india
+
+    # For locations within India, calculate cost based on distance using pincode
+    outlet_pincode = '673001'  # Kozhikode, Kerala pincode
+
+    # Using Google Maps Distance Matrix API
+    try:
+        api_key = "AIzaSyAv44pEZqLcd3Tck0ppI4TgTsAVetKeVfc"
+        response = requests.get(
+            "https://maps.googleapis.com/maps/api/distancematrix/json",
+            params={
+                "origins": outlet_pincode,
+                "destinations": pincode,
+                "key": api_key,
+            }
+        )
+        response.raise_for_status()
+        distance_info = response.json()
+        rows = distance_info.get('rows', [])
+        elements = rows[0].get('elements', []) if rows else []
+        distance = elements[0].get('distance', {}).get('value', 0) / 1000  # Convert meters to kilometers
+    except Exception as e:
+        flash(f"Could not calculate shipping cost: {e}", 'warning')
+        return base_shipping_cost  # Fallback to base cost
+
+    # Add distance-based charges
+    if distance <= 50:
+        distance_cost = 20  # Nearby locations
+    elif distance <= 200:
+        distance_cost = 50  # Medium range
+    else:
+        distance_cost = 100  # Long-distance
+
+    # Calculate total shipping cost
+    shipping_cost = base_shipping_cost + (weight_rate * product_weight) + distance_cost
+    return shipping_cost
+
 @app.route('/cart')
 @login_required
 def view_cart():
@@ -213,7 +272,27 @@ def view_cart():
 
     cart_items = CartItem.query.filter_by(cart_id=cart.cart_id).all()
     total_price = sum(item.quantity * item.product.selling_price for item in cart_items)
-    return render_template('cart.html', cart_items=cart_items, total_price=total_price)
+
+    # Calculate total shipping cost
+    total_shipping_cost = 0
+    for item in cart_items:
+        shipping_cost = calculate_shipping_cost(
+            pincode=current_user.pincode,  # Assuming the user model has a pincode field
+            product_weight=item.product.product_weight,  # Assuming the product model has a weight field
+            country=current_user.country  # Assuming the user model has a country field
+        )
+        total_shipping_cost += shipping_cost
+
+    total_price_with_shipping = total_price + total_shipping_cost
+
+    return render_template(
+        'cart.html', 
+        cart_items=cart_items, 
+        total_price=total_price, 
+        shipping_cost=total_shipping_cost,
+        total_price_with_shipping=total_price_with_shipping
+    )
+
 
 
 @app.route('/update_cart/<int:item_id>', methods=['POST'])

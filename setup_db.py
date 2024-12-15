@@ -127,18 +127,20 @@ def setup_db():
                 password_hash=generate_password_hash("010203"),
                 role="Customer",
                 phone_number="1234567892",
+                country="India",
                 address="123 Main Street",
-                pincode="560001",
+                pincode="141104",
                 created_at=datetime.utcnow()
             ),
             User(
-                name="Customer Two",
-                email="customer2@example.com",
+                name="Minhaj",
+                email="minhaj@gmail.com",
                 password_hash=generate_password_hash("customerpassword"),
                 role="Customer",
                 phone_number="1234567893",
+                country="India",
                 address="456 Elm Street",
-                pincode="560002",
+                pincode="673572",
                 created_at=datetime.utcnow()
             ),
         ]

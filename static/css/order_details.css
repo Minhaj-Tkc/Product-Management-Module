@@ -3,9 +3,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: calc(100vh - 152px);
     padding: 20px;
     background-color: #f8f8f8;
+    /* navbar height + footer height = 127 */
+    min-height: calc(100vh - 127px); 
 }
 
 /* Order container */

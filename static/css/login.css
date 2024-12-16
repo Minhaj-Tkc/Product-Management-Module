@@ -3,7 +3,8 @@
 ============================ */
 .login-container {
     display: flex;
-    height: calc(100vh - 152px); 
+    /* navbar height + footer height = 127 */
+    min-height: calc(100vh - 127px); 
     background-color: #f5f5f5;
 }
 

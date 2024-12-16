@@ -1,7 +1,6 @@
 /* ============================
    General Styling
 ============================ */
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -13,6 +12,7 @@ body {
     background: #f9f9f9;
     color: #333;
 }
+
 
 /* Navbar Styling */
 .custom-navbar {

@@ -1,6 +1,7 @@
 /* Full page container */
 .full-page {
-    min-height: calc(100vh - 152px);
+    /* navbar height + footer height = 127 */
+    min-height: calc(100vh - 127px); 
     display: flex;
     justify-content: center;
     align-items: center;

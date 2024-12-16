@@ -1,9 +1,8 @@
-/* General Styling */
-
-
 /* Page Wrapper */
 .product-wrapper {
     padding: 30px;
+    /* navbar height + footer height = 127 */
+    min-height: calc(100vh - 127px); 
 }
 
 .page-title {
@@ -124,7 +123,6 @@
 }
 
 
-
 .filter-container {
     display: flex;
     justify-content: space-between;
@@ -182,6 +180,8 @@ a{
 
 .product-stock-out-of-stock {
     color: #e63946;
+    font-size: 1.1rem;
+    font-weight: bold;
 }
 
 

@@ -102,7 +102,7 @@ def setup_db():
                 created_at=datetime.utcnow()
             ),
             User(
-                name="Courier",
+                name="Courier1",
                 email="courier1@gmail.com",
                 password_hash=generate_password_hash("010203"),
                 role="Courier",
@@ -112,13 +112,33 @@ def setup_db():
                 created_at=datetime.utcnow()
             ),
             User(
-                name="Courier Two",
+                name="Courier1",
                 email="courier2@example.com",
                 password_hash=generate_password_hash("courierpassword"),
                 role="Courier",
                 phone_number="1234567891",
                 vehicle_info="Bicycle",
                 vehicle_number="EF456GH",
+                created_at=datetime.utcnow()
+            ),
+            User(
+                name="Courier3",
+                email="courier3@gmail.com",
+                password_hash=generate_password_hash("010203"),
+                role="Courier",
+                phone_number="1234567890",
+                vehicle_info="Motorcycle",
+                vehicle_number="AB153CD",
+                created_at=datetime.utcnow()
+            ),
+            User(
+                name="Courier4",
+                email="courier4@example.com",
+                password_hash=generate_password_hash("courierpassword"),
+                role="Courier",
+                phone_number="1234567891",
+                vehicle_info="Bicycle",
+                vehicle_number="EF453GH",
                 created_at=datetime.utcnow()
             ),
             User(
@@ -134,8 +154,8 @@ def setup_db():
             ),
             User(
                 name="Minhaj",
-                email="minhaj@gmail.com",
-                password_hash=generate_password_hash("customerpassword"),
+                email="minhajtkc@gmail.com",
+                password_hash=generate_password_hash("010203"),
                 role="Customer",
                 phone_number="1234567893",
                 country="India",

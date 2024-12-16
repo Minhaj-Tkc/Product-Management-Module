@@ -4,7 +4,8 @@ from flask_migrate import Migrate
 from models import db, User, Category, Product, Cart, CartItem, Order, OrderItem  # Import db from models
 from flask_login import login_required, current_user, login_user, LoginManager
 from forms import LoginForm
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
 import requests
 
 # Initialize the app
@@ -218,7 +219,7 @@ def add_to_cart(product_id):
 
 
 
-def calculate_shipping_cost(pincode, product_weight, country):
+def calculate_shipping_cost(pincode, total_weight, country):
     fixed_rate_for_outside_india = 500  # Fixed rate for countries outside India
     base_shipping_cost = 50  # Base cost for nearby locations
     weight_rate = 10  # Additional cost per kg of weight
@@ -259,8 +260,9 @@ def calculate_shipping_cost(pincode, product_weight, country):
         distance_cost = 100  # Long-distance
 
     # Calculate total shipping cost
-    shipping_cost = base_shipping_cost + (weight_rate * product_weight) + distance_cost
+    shipping_cost = base_shipping_cost + (weight_rate * total_weight) + distance_cost
     return shipping_cost
+
 
 @app.route('/cart')
 @login_required
@@ -273,25 +275,28 @@ def view_cart():
     cart_items = CartItem.query.filter_by(cart_id=cart.cart_id).all()
     total_price = sum(item.quantity * item.product.selling_price for item in cart_items)
 
-    # Calculate total shipping cost
-    total_shipping_cost = 0
-    for item in cart_items:
-        shipping_cost = calculate_shipping_cost(
-            pincode=current_user.pincode,  # Assuming the user model has a pincode field
-            product_weight=item.product.product_weight,  # Assuming the product model has a weight field
-            country=current_user.country  # Assuming the user model has a country field
-        )
-        total_shipping_cost += shipping_cost
+    # Calculate total weight of the cart
+    total_weight = sum(item.product.product_weight * item.quantity for item in cart_items)
+
+    # Calculate total shipping cost based on the cart's total weight
+    total_shipping_cost = calculate_shipping_cost(
+        pincode=current_user.pincode,
+        total_weight=total_weight,
+        country=current_user.country
+    )
 
     total_price_with_shipping = total_price + total_shipping_cost
 
     return render_template(
-        'cart.html', 
+        'cart.html',
+        user=current_user,
         cart_items=cart_items, 
         total_price=total_price, 
+        total_weight=total_weight,
         shipping_cost=total_shipping_cost,
         total_price_with_shipping=total_price_with_shipping
     )
+
 
 
 
@@ -337,14 +342,34 @@ def remove_from_cart(item_id):
 #         flash('Your cart is empty. Add some products before checking out.', 'info')
 #         return redirect(url_for('show_products'))
 
+#     # Check for product availability in stock
+#     for cart_item in cart.cart_items:
+#         product = cart_item.product
+#         if cart_item.quantity > product.stock_quantity:
+#             flash(f'Not enough stock for {product.name}. Available stock: {product.stock_quantity}.', 'danger')
+#             return redirect(url_for('view_cart'))  # Redirect to cart if stock is insufficient
+
 #     # Create the order
 #     total_price = sum(item.quantity * item.product.selling_price for item in cart.cart_items)
-#     order = Order(user_id=current_user.user_id, total_price=total_price, status='Pending', assigned_to="3", address=current_user.address, pincode=current_user.pincode, shipping_cost=10)
+#     order = Order(
+#         user_id=current_user.user_id,
+#         total_price=total_price,
+#         status='Pending',
+#         assigned_to="3",  # You can set this based on your logic
+#         address=current_user.address,
+#         pincode=current_user.pincode,
+#         shipping_cost=10
+#     )
 #     db.session.add(order)
 #     db.session.commit()
 
-#     # Add items to the order
+#     # Add items to the order and update stock
 #     for cart_item in cart.cart_items:
+#         # Update product stock
+#         product = cart_item.product
+#         product.stock_quantity -= cart_item.quantity  # Decrease the stock
+
+#         # Add order items
 #         order_item = OrderItem(
 #             order_id=order.order_id,
 #             product_id=cart_item.product_id,
@@ -363,6 +388,7 @@ def remove_from_cart(item_id):
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
+    print("this is 1")
     cart = Cart.query.filter_by(user_id=current_user.user_id).first()
     if not cart or not cart.cart_items:
         flash('Your cart is empty. Add some products before checking out.', 'info')
@@ -373,18 +399,37 @@ def checkout():
         product = cart_item.product
         if cart_item.quantity > product.stock_quantity:
             flash(f'Not enough stock for {product.name}. Available stock: {product.stock_quantity}.', 'danger')
-            return redirect(url_for('view_cart'))  # Redirect to cart if stock is insufficient
+            return redirect(url_for('view_cart'))
+    print("this is 2")
+    # Calculate total weight for the cart
+    total_weight = sum(item.product.product_weight * item.quantity for item in cart.cart_items)
+
+    # Calculate shipping cost based on total weight
+    shipping_cost = calculate_shipping_cost(
+        pincode=current_user.pincode,
+        total_weight=total_weight,
+        country=current_user.country
+    )
+
+    # Assign courier
+    couriers = User.query.filter_by(role='Courier').all()
+    print(couriers)
+    if not couriers:
+        flash('No couriers are available at the moment. Please try again later.', 'danger')
+        return redirect(url_for('view_cart'))
+    assigned_courier = random.choice(couriers)
 
     # Create the order
     total_price = sum(item.quantity * item.product.selling_price for item in cart.cart_items)
     order = Order(
         user_id=current_user.user_id,
         total_price=total_price,
-        status='Pending',
-        assigned_to="3",  # You can set this based on your logic
+        status='Picked Up',
+        assigned_to=assigned_courier.user_id,  # Randomly assigned courier
         address=current_user.address,
         pincode=current_user.pincode,
-        shipping_cost=10
+        shipping_cost=shipping_cost,
+        estimated_delivery=datetime.utcnow() + timedelta(days=5)  # Estimated delivery in 5 days
     )
     db.session.add(order)
     db.session.commit()
@@ -393,7 +438,7 @@ def checkout():
     for cart_item in cart.cart_items:
         # Update product stock
         product = cart_item.product
-        product.stock_quantity -= cart_item.quantity  # Decrease the stock
+        product.stock_quantity -= cart_item.quantity
 
         # Add order items
         order_item = OrderItem(
@@ -409,6 +454,7 @@ def checkout():
 
     flash('Your order has been placed successfully!', 'success')
     return redirect(url_for('order_summary', order_id=order.order_id))
+
 
 
 @app.route('/order/<int:order_id>')

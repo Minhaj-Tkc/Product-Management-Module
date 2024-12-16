@@ -32,3 +32,25 @@ body {
     height: 65px;
     background-color: rgb(147, 123, 123);
 }
+
+a{
+    display: block;
+    text-decoration: none; 
+    color: inherit; 
+}
+
+
+/* Custom Toast Styles */
+.custom-toast-top {
+    margin-top: 60px !important; /* Adjust gap from top */
+}
+
+.toast {
+    color: white !important; 
+    background-color: #38845a !important; 
+    border: none !important;
+}
+
+.toast-progress {
+    background-color: #ffffff !important; 
+}

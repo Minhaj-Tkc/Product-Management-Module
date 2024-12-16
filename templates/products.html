@@ -36,7 +36,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/products.js') }}"></script>
+<script src="{{ url_for('static', filename='js/styles.js') }}"></script>
 <script>
     const flashed_messages = {{ get_flashed_messages(with_categories=true) | tojson | safe }};
 </script>

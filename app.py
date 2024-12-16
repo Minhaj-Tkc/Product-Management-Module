@@ -52,82 +52,6 @@ def login():
     return render_template('login.html', form=form)
 
 
-# @app.route('/show_products')
-# def show_products():
-#     products = Product.query.all()
-#     return render_template("products.html", products=products, user=current_user)
-
-
-# @app.route('/show_products', methods=['GET'])
-# def show_products():
-#     category = request.args.get('category')  # Get category from query params
-#     search_query = request.args.get('search')  # Get search query
-#     sort_by = request.args.get('sort_by', 'name')  # Default sort by name
-
-#     products_query = Product.query  # Assuming SQLAlchemy
-
-#     # Apply filtering based on category
-#     if category:
-#         products_query = products_query.filter_by(category=category)
-
-#     # Apply search functionality
-#     if search_query:
-#         products_query = products_query.filter(
-#             Product.name.ilike(f"%{search_query}%") |
-#             Product.description.ilike(f"%{search_query}%")
-#         )
-
-#     # Apply sorting
-#     if sort_by == 'price':
-#         products_query = products_query.order_by(Product.selling_price)
-#     elif sort_by == 'weight':
-#         products_query = products_query.order_by(Product.product_weight)
-#     else:
-#         products_query = products_query.order_by(Product.name)
-
-#     products = products_query.all()
-#     categories = Product.query.with_entities(Product.category).distinct()
-
-#     return render_template('products.html', products=products, categories=categories, user=current_user)
-
-
-# @app.route('/show_products', methods=['GET'])
-# def show_products():
-#     category_name = request.args.get('category')  # Get category name from query params
-#     search_query = request.args.get('search')  # Get search query
-#     sort_by = request.args.get('sort_by', 'name')  # Default sort by name
-
-#     products_query = Product.query  # Assuming SQLAlchemy
-
-#     # Apply filtering based on category
-#     if category_name:
-#         products_query = products_query.join(Category).filter(Category.category_name == category_name)
-
-#     # Apply search functionality
-#     if search_query:
-#         products_query = products_query.filter(
-#             Product.name.ilike(f"%{search_query}%") |
-#             Product.description.ilike(f"%{search_query}%")
-#         )
-
-#     # Apply sorting
-#     if sort_by == 'price':
-#         products_query = products_query.order_by(Product.selling_price)
-#     elif sort_by == 'weight':
-#         products_query = products_query.order_by(Product.product_weight)
-#     else:
-#         products_query = products_query.order_by(Product.name)
-
-#     # Fetch filtered, sorted products
-#     products = products_query.all()
-
-#     # Fetch distinct categories
-#     categories = Category.query.with_entities(Category.category_name).distinct()
-
-#     return render_template('products.html', products=products, categories=categories, user=current_user)
-
-
-# from flask import jsonify, render_template, request
 
 @app.route('/show_products', methods=['GET'])
 def show_products():
@@ -169,7 +93,6 @@ def product_details(product_id):
 
 
 
-
 @app.route('/add_to_cart/<int:product_id>', methods=['POST'])
 @login_required
 def add_to_cart(product_id):
@@ -201,21 +124,6 @@ def add_to_cart(product_id):
     flash(toast_message, 'success')  # Success indicates the type for the toaster
     return redirect(url_for('show_products'))
 
-
-
-
-
-# @app.route('/cart')
-# @login_required
-# def view_cart():
-#     cart = Cart.query.filter_by(user_id=current_user.user_id).first()
-#     if not cart or not cart.cart_items:
-#         flash('Your cart is empty.', 'info')
-#         return redirect(url_for('show_products'))
-
-#     cart_items = CartItem.query.filter_by(cart_id=cart.cart_id).all()
-#     total_price = sum(item.quantity * item.product.selling_price for item in cart_items)
-#     return render_template('cart.html', cart_items=cart_items, total_price=total_price)
 
 
 
@@ -299,7 +207,6 @@ def view_cart():
 
 
 
-
 @app.route('/update_cart/<int:item_id>', methods=['POST'])
 @login_required
 def update_cart(item_id):
@@ -333,56 +240,6 @@ def remove_from_cart(item_id):
     flash('Item removed from cart.', 'info')
     return redirect(url_for('view_cart'))
 
-
-# @app.route('/checkout', methods=['GET', 'POST'])
-# @login_required
-# def checkout():
-#     cart = Cart.query.filter_by(user_id=current_user.user_id).first()
-#     if not cart or not cart.cart_items:
-#         flash('Your cart is empty. Add some products before checking out.', 'info')
-#         return redirect(url_for('show_products'))
-
-#     # Check for product availability in stock
-#     for cart_item in cart.cart_items:
-#         product = cart_item.product
-#         if cart_item.quantity > product.stock_quantity:
-#             flash(f'Not enough stock for {product.name}. Available stock: {product.stock_quantity}.', 'danger')
-#             return redirect(url_for('view_cart'))  # Redirect to cart if stock is insufficient
-
-#     # Create the order
-#     total_price = sum(item.quantity * item.product.selling_price for item in cart.cart_items)
-#     order = Order(
-#         user_id=current_user.user_id,
-#         total_price=total_price,
-#         status='Pending',
-#         assigned_to="3",  # You can set this based on your logic
-#         address=current_user.address,
-#         pincode=current_user.pincode,
-#         shipping_cost=10
-#     )
-#     db.session.add(order)
-#     db.session.commit()
-
-#     # Add items to the order and update stock
-#     for cart_item in cart.cart_items:
-#         # Update product stock
-#         product = cart_item.product
-#         product.stock_quantity -= cart_item.quantity  # Decrease the stock
-
-#         # Add order items
-#         order_item = OrderItem(
-#             order_id=order.order_id,
-#             product_id=cart_item.product_id,
-#             quantity=cart_item.quantity
-#         )
-#         db.session.add(order_item)
-#         db.session.delete(cart_item)  # Remove the item from the cart
-
-#     # Empty the cart after checkout
-#     db.session.commit()
-
-#     flash('Your order has been placed successfully!', 'success')
-#     return redirect(url_for('order_summary', order_id=order.order_id))
 
 
 @app.route('/checkout', methods=['GET', 'POST'])
@@ -453,19 +310,19 @@ def checkout():
     db.session.commit()
 
     flash('Your order has been placed successfully!', 'success')
-    return redirect(url_for('order_summary', order_id=order.order_id))
+    return redirect(url_for('order_details', order_id=order.order_id))
 
 
 
 @app.route('/order/<int:order_id>')
 @login_required
-def order_summary(order_id):
+def order_details(order_id):
     order = Order.query.get_or_404(order_id)
     if order.user_id != current_user.user_id:
         flash('Unauthorized access to this order.', 'danger')
-        return redirect(url_for('products'))
+        return redirect(url_for('login'))
 
-    return render_template('order_summary.html', order=order)
+    return render_template('order_details.html', order=order)
 
 
 # Main entry point

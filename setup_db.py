@@ -38,6 +38,16 @@ def setup_db():
                 image_url="https://bouqs.com/blog/wp-content/uploads/2018/08/shutterstock_1662182848-min-1080x719.jpg"
             ),
             Product(
+                name="Tulip Plant",
+                description="Bright and colorful tulips for your garden.",
+                cost_price=180,
+                selling_price=230,
+                category_id=flowers.category_id,
+                stock_quantity=40,
+                product_weight=0.4,
+                image_url="https://static.wixstatic.com/media/7d9393_3bb37ec5f92445f59d49e3b6aad09f34~mv2.jpg/v1/fill/w_568,h_378,al_c,q_80,usm_0.66_1.00_0.01,enc_auto/7d9393_3bb37ec5f92445f59d49e3b6aad09f34~mv2.jpg"
+            ),
+            Product(
                 name="Tomato Plant",
                 description="Healthy tomato plant for fresh produce.",
                 cost_price=100,
@@ -48,6 +58,16 @@ def setup_db():
                 image_url="https://t3.ftcdn.net/jpg/02/71/63/24/360_F_271632489_iZexHnP4LtGvDD39QvklpgrgdMeGj7PH.jpg"
             ),
             Product(
+                name="Cucumber Plant",
+                description="Crisp cucumber plant for your kitchen garden.",
+                cost_price=70,
+                selling_price=90,
+                category_id=vegetables.category_id,
+                stock_quantity=60,
+                product_weight=0.6,
+                image_url="https://media.greenmatters.com/brand-img/xNJqPQnf-/0x0/cucumber-growing-in-vegetable-garden-1687980078564.jpg"
+            ),
+            Product(
                 name="Aloe Vera",
                 description="Low-maintenance aloe vera plant with medicinal properties.",
                 cost_price=80,
@@ -56,6 +76,16 @@ def setup_db():
                 stock_quantity=40,
                 product_weight=1.2,
                 image_url="https://m.media-amazon.com/images/I/81XWpVvk5AL._AC_UF1000,1000_QL80_.jpg"
+            ),
+            Product(
+                name="Mint Plant",
+                description="Fresh mint plant for your kitchen and beverages.",
+                cost_price=40,
+                selling_price=60,
+                category_id=herbs.category_id,
+                stock_quantity=70,
+                product_weight=0.3,
+                image_url="https://www.geturbanleaf.com/cdn/shop/articles/1008bcba2907fadf07e2f5986a9aab49.jpg?v=1704822162"
             ),
             Product(
                 name="Marigold Plant",
@@ -78,15 +108,45 @@ def setup_db():
                 image_url="https://rukminim2.flixcart.com/image/850/1000/xif0q/plant-sapling/z/s/b/annual-yes-yes-spinach-1-pot-elitegreen-original-imagjpcsgfdjmd6d.jpeg?q=90&crop=false"
             ),
             Product(
-                name="Tulsi Plant",
-                description="Sacred and medicinal tulsi plant for health benefits.",
-                cost_price=60,
-                selling_price=90,
+                name="Chili Plant",
+                description="Hot chili plant for your spicy dishes.",
+                cost_price=40,
+                selling_price=60,
+                category_id=vegetables.category_id,
+                stock_quantity=50,
+                product_weight=0.2,
+                image_url="https://cdn.mos.cms.futurecdn.net/2EkmdRvyUvHJjnwrCpCToE.jpg"
+            ),
+            Product(
+                name="Basil Plant",
+                description="Fresh basil plant for cooking and medicinal uses.",
+                cost_price=50,
+                selling_price=75,
                 category_id=herbs.category_id,
-                stock_quantity=70,
-                product_weight=0.6,
-                image_url="https://lh3.googleusercontent.com/-HICQiS4SJBEWT8SShC0WTJ4fFBqFK-TPsnaTCCI28DBRkGHq6xQEUbTg3ooKd1LKZAoBot3C-j10VICkpCwOKpRMfQ9y763-Q=w3840-h2160-c-rw-v3"
-            )
+                stock_quantity=60,
+                product_weight=0.3,
+                image_url="https://www.marthastewart.com/thmb/w1f38EKcAYkVTe2JjqIccB7qOeY=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/ms-how-to-grow-basil-69c2254cf454424fbc55992cc8155dbe.jpg"
+            ),
+            Product(
+                name="Geranium Plant",
+                description="Colorful geranium plant for brightening your garden.",
+                cost_price=120,
+                selling_price=160,
+                category_id=flowers.category_id,
+                stock_quantity=40,
+                product_weight=0.5,
+                image_url="https://5.imimg.com/data5/SELLER/Default/2024/7/433081468/LT/UH/XY/107425613/geranium-plant.jpg"
+            ),
+            Product(
+                name="Cabbage Plant",
+                description="Fresh cabbage plant for your kitchen garden.",
+                cost_price=50,
+                selling_price=80,
+                category_id=vegetables.category_id,
+                stock_quantity=90,
+                product_weight=1.0,
+                image_url="https://kellogggarden.com/wp-content/uploads/2021/03/Cabbage.jpg"
+            ),
         ]
 
         db.session.add_all(dummy_products)
@@ -112,7 +172,7 @@ def setup_db():
                 created_at=datetime.utcnow()
             ),
             User(
-                name="Courier1",
+                name="Courier2",
                 email="courier2@example.com",
                 password_hash=generate_password_hash("courierpassword"),
                 role="Courier",

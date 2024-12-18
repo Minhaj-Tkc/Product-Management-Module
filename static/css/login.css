@@ -1,6 +1,4 @@
-/* ============================
-   Login and Registration Page Containers
-============================ */
+/* Login  Page */
 .login-container {
     display: flex;
     /* navbar height + footer height = 127 */

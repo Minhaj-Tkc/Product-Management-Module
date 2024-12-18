@@ -6,7 +6,7 @@ function updateQuantity(itemId, change) {
 
     // Update Quantity
     const newQuantity = Math.max(1, Math.min(10, currentQuantity + change)); // Ensure quantity is between 1 and 10
-
+    
     // Make the POST request to update the server
     fetch(`/update_cart/${itemId}`, {
         method: 'POST',

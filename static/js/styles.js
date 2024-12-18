@@ -1,5 +1,3 @@
-console.log("Hello world!");
-
 document.addEventListener('DOMContentLoaded', function () {
     if (typeof flashed_messages !== 'undefined' && flashed_messages.length > 0) {
         flashed_messages.forEach(message => {

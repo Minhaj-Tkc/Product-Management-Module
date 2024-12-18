@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchBar = document.getElementById('search-bar');
     const productGrid = document.querySelector('.product-grid');
     const filterForm = document.querySelector('.filter-form');
-
+    
     // Event listener for keyup on search bar
     searchBar.addEventListener('keyup', async () => {
         const formData = new FormData(filterForm); // Gather form data
